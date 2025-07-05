@@ -1,9 +1,5 @@
 package TruongND48_JPL.L.A203.src.main.java.fa.training.main;
-
-import TruongND48_JPL.L.A203.src.main.java.fa.training.entities.Customer;
 import TruongND48_JPL.L.A203.src.main.java.fa.training.services.CustomerService;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 

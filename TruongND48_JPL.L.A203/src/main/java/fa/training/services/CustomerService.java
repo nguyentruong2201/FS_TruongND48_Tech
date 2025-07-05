@@ -1,7 +1,6 @@
 package TruongND48_JPL.L.A203.src.main.java.fa.training.services;
 
 import TruongND48_JPL.L.A203.src.main.java.fa.training.utils.Constants;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileReader;
