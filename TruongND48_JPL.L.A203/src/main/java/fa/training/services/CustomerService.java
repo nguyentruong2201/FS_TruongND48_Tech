@@ -1,16 +1,11 @@
 package TruongND48_JPL.L.A203.src.main.java.fa.training.services;
 
-import TruongND48_JPL.L.A203.src.main.java.fa.training.entities.Customer;
-import TruongND48_JPL.L.A203.src.main.java.fa.training.entities.Order;
 import TruongND48_JPL.L.A203.src.main.java.fa.training.utils.Constants;
-import TruongND48_JPL.L.A203.src.main.java.fa.training.utils.Validator;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.sql.Date;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -18,187 +13,169 @@ import java.util.Scanner;
 public class CustomerService {
     static Scanner scanner = new Scanner(System.in);
 
-    public List<Customer> createCustomers(){
-        // Lấy toàn bộ customers đã có (bao gồm cả trong file)
-        List<Customer> allCustomers = findAll();
-        List<Customer> newCustomers = new ArrayList<>();
-        String continueInput;
+    private List<String> getAllPhones(List<String> allCustomers, List<String> sessionCustomers) {
+        List<String> phones = new ArrayList<>();
+        for (String line : allCustomers) {
+            String[] parts = line.split(",", 4);
+            if (parts.length > 2) phones.add(parts[2]);
+        }
+        for (String line : sessionCustomers) {
+            String[] parts = line.split(",", 4);
+            if (parts.length > 2) phones.add(parts[2]);
+        }
+        return phones;
+    }
 
+    private List<String> getAllOrderNumbers(List<String> allCustomers, List<String> sessionCustomers) {
+        List<String> orderNumbers = new ArrayList<>();
+        for (String line : allCustomers) {
+            String[] parts = line.split(",", 4);
+            if (parts.length > 3 && !parts[3].isEmpty()) {
+                String[] orders = parts[3].split(";");
+                for (String o : orders) {
+                    String[] orderParts = o.split(":");
+                    if (orderParts.length > 0) orderNumbers.add(orderParts[0]);
+                }
+            }
+        }
+        for (String line : sessionCustomers) {
+            String[] parts = line.split(",", 4);
+            if (parts.length > 3 && !parts[3].isEmpty()) {
+                String[] orders = parts[3].split(";");
+                for (String o : orders) {
+                    String[] orderParts = o.split(":");
+                    if (orderParts.length > 0) orderNumbers.add(orderParts[0]);
+                }
+            }
+        }
+        return orderNumbers;
+    }
+
+    private String enterOrder(List<String> allCustomers, List<String> sessionCustomers, Scanner scanner) {
+        StringBuilder orderList = new StringBuilder();
+        String addOrder;
+        do {
+            String orderNumber;
+            while (true) {
+                System.out.print("Enter order number: ");
+                orderNumber = scanner.nextLine();
+                List<String> allOrderNumbers = getAllOrderNumbers(allCustomers, sessionCustomers);
+                if (TruongND48_JPL.L.A203.src.main.java.fa.training.utils.Validator.isValidOrderNumber(orderNumber, allOrderNumbers)) break;
+                System.out.println("Invalid or duplicate order number!");
+            }
+            System.out.print("Enter order date (yyyy-MM-dd): ");
+            String orderDate = scanner.nextLine();
+            orderList.append(orderNumber).append(":").append(orderDate).append(";");
+            System.out.print("Add another order? (y/n): ");
+            addOrder = scanner.nextLine();
+        } while (!addOrder.equalsIgnoreCase("n"));
+        if (orderList.length() > 0) orderList.deleteCharAt(orderList.length() - 1);
+        return orderList.toString();
+    }
+
+    public List<String> createCustomer() {
+        List<String> customers = new ArrayList<>();
+        // Lấy toàn bộ khách hàng đã có từ file
+        List<String> allCustomers = findAll();
+        Scanner scanner = new Scanner(System.in);
+        String continueInput;
         do {
             System.out.print("Enter customer name: ");
             String name = scanner.nextLine();
-
-            // Lấy tất cả phone number đã có (bao gồm cả vừa nhập trong session này)
-            List<String> existingPhoneNumbers = new ArrayList<>();
-            for (Customer c : allCustomers) existingPhoneNumbers.add(c.getPhoneNumber());
-            for (Customer c : newCustomers) existingPhoneNumbers.add(c.getPhoneNumber());
-
-            String phone;
-            while (true) {
-                System.out.print("Enter phone number (10 digits): ");
-                phone = scanner.nextLine();
-                if (Validator.isValidPhoneNumber(phone, existingPhoneNumbers)) break;
-                System.out.println("Invalid or duplicate phone number!");
-            }
-
             System.out.print("Enter address: ");
             String address = scanner.nextLine();
-
-            List<Order> orders = new ArrayList<>();
-            // Lấy tất cả order number đã có (bao gồm cả vừa nhập trong session này)
-            List<String> existingOrderNumbers = new ArrayList<>();
-            for (Customer c : allCustomers) {
-                if (c.getOrders() != null) {
-                    for (Order o : c.getOrders()) existingOrderNumbers.add(o.getNumber());
-                }
-            }
-            // Thêm order number của các customer mới nhập trong session này
-            for (Customer c : newCustomers) {
-                if (c.getOrders() != null) {
-                    for (Order o : c.getOrders()) existingOrderNumbers.add(o.getNumber());
-                }
-            }
-
+            String phone;
             while (true) {
-                System.out.print("Enter order number (10 chars): ");
-                String number = scanner.nextLine();
-                if (!Validator.isValidOrderNumber(number, existingOrderNumbers)) {
-                    System.out.println("Invalid or duplicate order number!");
-                    continue;
-                }
-                existingOrderNumbers.add(number);
-
-                System.out.print("Enter order date (yyyy-MM-dd): ");
-                String dateStr = scanner.nextLine();
-                Date date;
-                try {
-                    java.util.Date utilDate = new SimpleDateFormat("yyyy-MM-dd").parse(dateStr);
-                    date = new Date(utilDate.getTime());
-                } catch (Exception e) {
-                    System.out.println("Invalid date format!");
-                    continue;
-                }
-
-                orders.add(new Order(number, date));
-
-                System.out.print("Add another order? (y/n): ");
-                if (!scanner.nextLine().equalsIgnoreCase("y")) break;
+                System.out.print("Enter phone number: ");
+                phone = scanner.nextLine();
+                List<String> allPhones = getAllPhones(allCustomers, customers);
+                if (TruongND48_JPL.L.A203.src.main.java.fa.training.utils.Validator.isValidPhoneNumber(phone, allPhones)) break;
+                System.out.println("Invalid or duplicate phone number!");
             }
-
-            newCustomers.add(new Customer(name, phone, address, orders));
-
+            String orderList = enterOrder(allCustomers, customers, scanner);
+            String customerLine = name + "," + address + "," + phone + "," + orderList;
+            customers.add(customerLine);
             System.out.print("Add another customer? (y/n): ");
             continueInput = scanner.nextLine();
-
         } while (!continueInput.equalsIgnoreCase("n"));
-
-        return newCustomers;
+        return customers;
     }
 
-    public void save(List<Customer> customers) {
+    public String save(List<String> customers) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(Constants.FILE_NAME))) {
-            for (Customer customer : customers) {
-                StringBuilder sb = new StringBuilder();
-                sb.append(customer.getName()).append(",");
-                sb.append(customer.getPhoneNumber()).append(",");
-                sb.append(customer.getAddress()).append(",");
-                if (customer.getOrders() != null && !customer.getOrders().isEmpty()) {
-                    for (Order order : customer.getOrders()) {
-                        sb.append(order.getNumber()).append(":").append(order.getDate()).append(";");
-                    }
-                    sb.deleteCharAt(sb.length() - 1); // remove last ;
-                }
-                writer.write(sb.toString());
+            for (String line : customers) {
+                writer.write(line);
                 writer.newLine();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            return "Save failed!";
         }
+        return "Save successful!";
     }
 
-    public void display(List<Customer> customers) {
-        if (customers.isEmpty()) {
-            System.out.println("No customers to display.");
-            return;
-        }
-        for (Customer customer : customers) {
-            System.out.println(customer);
-        }
-    }
-
-    public List<Customer> findAll() {
-        List<Customer> customers = new ArrayList<>();
+    public List<String> findAll() {
+        List<String> customers = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(Constants.FILE_NAME))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(",", 4);
-                if (parts.length < 4) continue;
-                String name = parts[0];
-                String phone = parts[1];
-                String address = parts[2];
-                List<Order> orders = new ArrayList<>();
-                if (!parts[3].isEmpty()) {
-                    String[] orderParts = parts[3].split(";");
-                    for (String op : orderParts) {
-                        String[] orderFields = op.split(":");
-                        if (orderFields.length == 2) {
-                            String number = orderFields[0];
-                            Date date = Date.valueOf(orderFields[1]);
-                            orders.add(new Order(number, date));
-                        }
-                    }
-                }
-                customers.add(new Customer(name, phone, address, orders));
+                customers.add(line);
             }
         } catch (Exception e) {
-            // file có thể chưa tồn tại, trả về list rỗng
+            System.out.println("Error reading file: " + e.getMessage());
         }
         return customers;
     }
 
-    public List<Customer> searchByPhoneNumber(String phoneNumber) {
-        List<Customer> customers = findAll();
-        List<Customer> result = new ArrayList<>();
-        for (Customer customer : customers) {
-            if (customer.getPhoneNumber().equals(phoneNumber)) {
-                result.add(customer);
+    public void display(List<String> customers) {
+        System.out.printf("%-20s %-20s %-15s %-30s\n", "Customer Name", "Address", "Phone Number", "Order");
+        for (String line : customers) {
+            String[] parts = line.split(",", 4);
+            String name = parts.length > 0 ? parts[0] : "";
+            String address = parts.length > 1 ? parts[1] : "";
+            String phone = parts.length > 2 ? parts[2] : "";
+            String orderList = parts.length > 3 ? parts[3] : "";
+            if (!orderList.isEmpty()) {
+                String[] orders = orderList.split(";");
+                for (int i = 0; i < orders.length; i++) {
+                    if (i == 0) {
+                        System.out.printf("%-20s %-20s %-15s %-30s\n", name, address, phone, orders[i]);
+                    } else {
+                        System.out.printf("%-20s %-20s %-15s %-30s\n", "", "", "", orders[i]);
+                    }
+                }
+            } else {
+                System.out.printf("%-20s %-20s %-15s %-30s\n", name, address, phone, "");
+            }
+        }
+    }
+
+    public List<String> search(String phone) {
+        List<String> result = new ArrayList<>();
+        List<String> customers = findAll();
+        for (String line : customers) {
+            String[] parts = line.split(",", 4);
+            if (parts.length > 2 && parts[2].equals(phone)) {
+                result.add(line);
             }
         }
         return result;
     }
 
-    public boolean deleteByPhoneNumber(String phoneNumber) {
-        List<Customer> customers = findAll();
-        boolean found = false;
-        for (Customer customer : customers) {
-            if (customer.getPhoneNumber().equals(phoneNumber)) {
-                customers.remove(customer);
-                found = true;
+    public boolean remove(String phone) {
+        List<String> customers = findAll();
+        boolean removed = false;
+        for (int i = 0; i < customers.size(); i++) {
+            String[] parts = customers.get(i).split(",", 4);
+            if (parts.length > 2 && parts[2].equals(phone)) {
+                customers.remove(i);
+                removed = true;
                 break;
             }
         }
-        if (found) {
-            // Save the updated list back to the file
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(Constants.FILE_NAME))) {
-                for (Customer customer : customers) {
-                    StringBuilder sb = new StringBuilder();
-                    sb.append(customer.getName()).append(",");
-                    sb.append(customer.getPhoneNumber()).append(",");
-                    sb.append(customer.getAddress()).append(",");
-                    if (customer.getOrders() != null && !customer.getOrders().isEmpty()) {
-                        for (Order order : customer.getOrders()) {
-                            sb.append(order.getNumber()).append(":").append(order.getDate()).append(";");
-                        }
-                        sb.deleteCharAt(sb.length() - 1); // remove last ;
-                    }
-                    writer.write(sb.toString());
-                    writer.newLine();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        if (removed) {
+            save(customers);
         }
-        return found;
+        return removed;
     }
 
 }

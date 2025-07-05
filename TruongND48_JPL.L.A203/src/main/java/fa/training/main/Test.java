@@ -12,7 +12,7 @@ public class Test {
         CustomerService service = new CustomerService();
         Scanner sc = new Scanner(System.in);
         int choice;
-        List<Customer> customers = service.findAll();
+        List<String> customers = service.findAll();
         do {
             System.out.println("\n===== Choose function: =====");
             System.out.println("1. Add a new Customer");
@@ -24,9 +24,9 @@ public class Test {
             choice = Integer.parseInt(sc.nextLine());
             switch (choice) {
                 case 1:
-                    List<Customer> newCustomers = service.createCustomers();
+                    List<String> newCustomers = service.createCustomer();
                     customers.addAll(newCustomers);
-                    service.save(customers);
+                    System.out.println(service.save(customers));
                     break;
                 case 2:
                     service.display(customers);
@@ -34,12 +34,7 @@ public class Test {
                 case 3:
                     System.out.print("Enter phone number to search: ");
                     String searchPhone = sc.nextLine();
-                    List<Customer> found = new ArrayList<>();
-                    for (Customer c : customers) {
-                        if (c.getPhoneNumber().equals(searchPhone)) {
-                            found.add(c);
-                        }
-                    }
+                    List<String> found = service.search(searchPhone);
                     if (found.isEmpty()) {
                         System.out.println("No customer found with that phone number.");
                     } else {
@@ -49,16 +44,9 @@ public class Test {
                 case 4:
                     System.out.print("Enter phone number to remove: ");
                     String removePhone = sc.nextLine();
-                    boolean removed = false;
-                    for (int i = 0; i < customers.size(); i++) {
-                        if (customers.get(i).getPhoneNumber().equals(removePhone)) {
-                            customers.remove(i);
-                            removed = true;
-                            break;
-                        }
-                    }
+                    boolean removed = service.remove(removePhone);
                     if (removed) {
-                        service.save(customers);
+                        customers = service.findAll();
                         System.out.println("Customer removed.");
                     } else {
                         System.out.println("No customer found with that phone number.");
